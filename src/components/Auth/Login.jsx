@@ -55,8 +55,7 @@ export default function Login() {
           duration: 3000,
           isClosable: true,
         });
-        navigate("/user"); // Navigate to the /user route
-        window.location.replace("/user"); 
+        navigate("/user");
       }
     } catch (err) {
       if (error) {
