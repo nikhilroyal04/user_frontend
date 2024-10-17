@@ -55,7 +55,7 @@ export default function Login() {
           duration: 3000,
           isClosable: true,
         });
-        sessionStorage.setItem("token",true)
+        sessionStorage.setItem("auth",true)
         navigate("/user");
       }
     } catch (err) {
