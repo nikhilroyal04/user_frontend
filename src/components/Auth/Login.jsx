@@ -56,6 +56,7 @@ export default function Login() {
           isClosable: true,
         });
         navigate("/user"); // Navigate to the /user route
+        window.location.replace("/user"); 
       }
     } catch (err) {
       if (error) {
