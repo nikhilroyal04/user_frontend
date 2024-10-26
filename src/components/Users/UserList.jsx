@@ -42,7 +42,7 @@ export default function UserList() {
   const [loadingDelete, setLoadingDelete] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchUserData());
+    // dispatch(fetchUserData());
   }, [dispatch, currentPage]);
 
   const handlePageChange = (newPage) => {
@@ -88,6 +88,13 @@ export default function UserList() {
     return <Error502 />;
   }
 
+  const userData = [{
+    name:"nikhil",
+    email: "nikhil@example.com",
+    phone: "1234567890",
+    status: "Active"
+  }]
+
   return (
     <Box p={6} maxW="95vw" mx="auto">
       <HStack justifyContent="space-between" mb={4}>
@@ -98,7 +105,7 @@ export default function UserList() {
       </HStack>
 
       <Stack spacing={4}>
-        {users.map((user) => (
+        {userData.map((user) => (
           <Box
             key={user.id}
             borderWidth={1}

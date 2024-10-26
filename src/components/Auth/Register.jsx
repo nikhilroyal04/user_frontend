@@ -1,96 +1,102 @@
 import React, { useState } from "react";
 import {
-  useToast,
   Box,
+  Button,
   FormControl,
   FormLabel,
   Input,
-  Button,
-  Heading,
-  Grid,
-  GridItem,
   Text,
-  Link,
+  useToast,
   InputGroup,
   InputLeftElement,
-  InputRightElement,
   FormErrorMessage,
+  Select,
+  Grid,
+  GridItem,
   Icon,
+  Heading,
 } from "@chakra-ui/react";
 import { FaUserAlt, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
-import { useDispatch } from "react-redux";
-import { addUser } from "../../features/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { signUp, verifyOtp, selectError } from "../../features/authSlice";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    gender: "",
+    phone: "",
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState(0);
   const dispatch = useDispatch();
+  const error = useSelector(selectError);
   const toast = useToast();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    status: "Active",
-  });
-
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
   const validateForm = () => {
-    let formErrors = {};
-    const emailPattern = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
-    if (!emailPattern.test(formData.email)) {
-      formErrors.email = "Invalid email format";
-    }
-    if (formData.phone.length !== 10 || isNaN(formData.phone)) {
-      formErrors.phone = "Phone number must be exactly 10 digits";
-    }
+    const formErrors = {};
+    if (!formData.firstName) formErrors.firstName = "First name is required";
+    if (!formData.lastName) formErrors.lastName = "Last name is required";
+    if (!formData.gender) formErrors.gender = "Gender is required";
+    if (!formData.email.includes("@")) formErrors.email = "Email is invalid";
+    if (formData.phone.length !== 10) formErrors.phone = "Phone is invalid";
+    if (formData.password.length < 6)
+      formErrors.password = "Password too short";
     return formErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
+
     setIsLoading(true);
-    dispatch(addUser(formData))
-      .then(() => {
-        setIsLoading(false);
+    try {
+      const response = await dispatch(signUp(formData));
+      if (response.success) {
         toast({
-          title: "Account created.",
-          description: "Your account has been created successfully.",
+          title: "OTP Sent",
+          description: "Please check your email for the OTP.",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+        setStep(1);
+      } else {
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpVerify = async () => {
+    setIsLoading(true);
+    try {
+      const otp_key = localStorage.getItem("otp_key");
+      const response = await dispatch(verifyOtp(otp, otp_key, formData.email));
+      if (response.success) {
+        toast({
+          title: "Verified",
+          description: "OTP verified successfully!",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
-        navigate("/login");
-      })
-      .catch((err) => {
-        setIsLoading(false);
-        toast({
-          title: "Error.",
-          description: "An error occurred during registration.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      });
+        setStep(2);
+      } else {
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -104,109 +110,181 @@ export default function Register() {
       bg="white"
     >
       <Heading mb={6} textAlign="center">
-        Register
+        {step === 0
+          ? "Register"
+          : step === 1
+          ? "Verify Email"
+          : "Registration Complete"}
       </Heading>
-      <form onSubmit={handleSubmit}>
-        <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
-          <GridItem>
-            <FormControl mb={4} isInvalid={errors.name} isRequired>
-              <FormLabel>name:</FormLabel>
-              <InputGroup>
-                <InputLeftElement
-                  children={<Icon as={FaUserAlt} color="gray.400" />}
-                />
-                <Input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
-              </InputGroup>
-            </FormControl>
-          </GridItem>
 
-          <GridItem>
-            <FormControl mb={4} isInvalid={errors.email} isRequired>
-              <FormLabel>Email:</FormLabel>
-              <InputGroup>
-                <InputLeftElement
-                  children={<Icon as={FaEnvelope} color="gray.400" />}
-                />
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </InputGroup>
-              {errors.email && (
-                <FormErrorMessage>{errors.email}</FormErrorMessage>
-              )}
-            </FormControl>
-          </GridItem>
+      {step === 0 && (
+        <form onSubmit={handleRegisterSubmit}>
+          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+            <GridItem>
+              <FormControl isRequired isInvalid={errors.firstName}>
+                <FormLabel>First Name</FormLabel>
+                <InputGroup>
+                  <InputLeftElement children={<Icon as={FaUserAlt} />} />
+                  <Input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                  />
+                </InputGroup>
+                <FormErrorMessage>{errors.firstName}</FormErrorMessage>
+              </FormControl>
+            </GridItem>
+            <GridItem>
+              <FormControl isRequired isInvalid={errors.lastName}>
+                <FormLabel>Last Name</FormLabel>
+                <InputGroup>
+                  <InputLeftElement children={<Icon as={FaUserAlt} />} />
+                  <Input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                  />
+                </InputGroup>
+                <FormErrorMessage>{errors.lastName}</FormErrorMessage>
+              </FormControl>
+            </GridItem>
 
-          <GridItem>
-            <FormControl mb={4} isInvalid={errors.phone} isRequired>
-              <FormLabel>Phone:</FormLabel>
-              <InputGroup>
-                <InputLeftElement
-                  children={<Icon as={FaPhone} color="gray.400" />}
-                />
-                <Input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </InputGroup>
-              {errors.phone && (
+            <GridItem>
+              <FormControl isRequired>
+                <FormLabel>Gender</FormLabel>
+                <Select
+                  name="gender"
+                  placeholder="Select gender"
+                  value={formData.gender}
+                  onChange={(e) =>
+                    setFormData({ ...formData, gender: e.target.value })
+                  }
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </Select>
+              </FormControl>
+            </GridItem>
+
+            <GridItem>
+              <FormControl isRequired isInvalid={errors.phone}>
+                <FormLabel>Phone Number</FormLabel>
+                <InputGroup>
+                  <InputLeftElement children={<Icon as={FaPhone} />} />
+                  <Input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                  />
+                </InputGroup>
                 <FormErrorMessage>{errors.phone}</FormErrorMessage>
-              )}
-            </FormControl>
-          </GridItem>
+              </FormControl>
+            </GridItem>
 
-          <GridItem colSpan={2}>
-            <FormControl mb={4} isRequired>
-              <FormLabel>Password:</FormLabel>
-              <InputGroup>
-                <InputLeftElement
-                  children={<Icon as={FaLock} color="gray.400" />}
-                />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                <InputRightElement>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                  </Button>
-                </InputRightElement>
-              </InputGroup>
-            </FormControl>
-          </GridItem>
-        </Grid>
+            <GridItem colSpan={2}>
+              <FormControl isRequired isInvalid={errors.email}>
+                <FormLabel>Email</FormLabel>
+                <InputGroup>
+                  <InputLeftElement children={<Icon as={FaEnvelope} />} />
+                  <Input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                  />
+                </InputGroup>
+                <FormErrorMessage>{errors.email}</FormErrorMessage>
+              </FormControl>
+            </GridItem>
 
-        <Button
-          type="submit"
-          colorScheme="teal"
-          width="full"
-          isLoading={isLoading}
-        >
-          Register
-        </Button>
-      </form>
+            <GridItem colSpan={2}>
+              <FormControl isRequired isInvalid={errors.password}>
+                <FormLabel>Password</FormLabel>
+                <InputGroup>
+                  <InputLeftElement children={<Icon as={FaLock} />} />
+                  <Input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                  />
+                </InputGroup>
+                <FormErrorMessage>{errors.password}</FormErrorMessage>
+              </FormControl>
+            </GridItem>
+          </Grid>
 
-      <Text textAlign="center" mt={4}>
-        Already have an account?{" "}
-        <Link color="teal.500" onClick={() => navigate("/login")}>
-          Login
-        </Link>
-      </Text>
+          {error && (
+            <Text color="red.500" mt={4}>
+              {error}
+            </Text>
+          )}
+
+          <Button
+            mt={4}
+            colorScheme="blue"
+            isLoading={isLoading}
+            type="submit"
+            width="full"
+          >
+            Register
+          </Button>
+        </form>
+      )}
+
+      {step === 1 && (
+        <Box mt={6}>
+          <FormControl isRequired>
+            <FormLabel>OTP</FormLabel>
+            <Input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+          </FormControl>
+
+          {error && (
+            <Text color="red.500" mt={4}>
+              {error}
+            </Text>
+          )}
+
+          <Button
+            mt={4}
+            colorScheme="blue"
+            isLoading={isLoading}
+            onClick={handleOtpVerify}
+            width="full"
+          >
+            Verify OTP
+          </Button>
+        </Box>
+      )}
+
+      {step === 2 && (
+        <Box mt={6} textAlign="center">
+          <Text fontSize="lg" color="green.500">
+            Registration Complete! 🎉
+          </Text>
+          <Button mt={4} colorScheme="blue" onClick={() => navigate("/login")}>
+            Go to Login
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }
