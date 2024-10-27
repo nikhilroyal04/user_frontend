@@ -19,7 +19,7 @@ import {
 import { FaUserAlt, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { signUp, verifyOtp, selectError } from "../../features/authSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -120,6 +120,7 @@ export default function Register() {
       {step === 0 && (
         <form onSubmit={handleRegisterSubmit}>
           <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+            {/* First Name */}
             <GridItem>
               <FormControl isRequired isInvalid={errors.firstName}>
                 <FormLabel>First Name</FormLabel>
@@ -137,6 +138,8 @@ export default function Register() {
                 <FormErrorMessage>{errors.firstName}</FormErrorMessage>
               </FormControl>
             </GridItem>
+
+            {/* Last Name */}
             <GridItem>
               <FormControl isRequired isInvalid={errors.lastName}>
                 <FormLabel>Last Name</FormLabel>
@@ -155,6 +158,7 @@ export default function Register() {
               </FormControl>
             </GridItem>
 
+            {/* Gender */}
             <GridItem>
               <FormControl isRequired>
                 <FormLabel>Gender</FormLabel>
@@ -172,6 +176,7 @@ export default function Register() {
               </FormControl>
             </GridItem>
 
+            {/* Phone Number */}
             <GridItem>
               <FormControl isRequired isInvalid={errors.phone}>
                 <FormLabel>Phone Number</FormLabel>
@@ -190,7 +195,8 @@ export default function Register() {
               </FormControl>
             </GridItem>
 
-            <GridItem colSpan={2}>
+            {/* Email */}
+            <GridItem>
               <FormControl isRequired isInvalid={errors.email}>
                 <FormLabel>Email</FormLabel>
                 <InputGroup>
@@ -208,7 +214,8 @@ export default function Register() {
               </FormControl>
             </GridItem>
 
-            <GridItem colSpan={2}>
+            {/* Password */}
+            <GridItem>
               <FormControl isRequired isInvalid={errors.password}>
                 <FormLabel>Password</FormLabel>
                 <InputGroup>
@@ -227,12 +234,14 @@ export default function Register() {
             </GridItem>
           </Grid>
 
+          {/* Error Message */}
           {error && (
             <Text color="red.500" mt={4}>
               {error}
             </Text>
           )}
 
+          {/* Register Button */}
           <Button
             mt={4}
             colorScheme="blue"
@@ -242,6 +251,18 @@ export default function Register() {
           >
             Register
           </Button>
+
+          <Text mt={4} textAlign="center">
+            Already have an account?{" "}
+            <Text
+              as={RouterLink}
+              to="/login"
+              color="blue.500"
+              fontWeight="bold"
+            >
+              Login
+            </Text>
+          </Text>
         </form>
       )}
 

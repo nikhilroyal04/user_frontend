@@ -19,6 +19,7 @@ import {
   verifyOtp,
   changePassword,
   selectError,
+  resendOtp
 } from "../../features/authSlice";
 import { useNavigate } from "react-router-dom";
 
@@ -84,6 +85,40 @@ export default function ForgotPassword() {
     }
   };
 
+  const handleResend = async () => {
+    setLoading(true);
+    try {
+      const { success, message } = await dispatch(resendOtp(email));
+      if (success) {
+        toast({
+          title: "OTP Resent",
+          description: message,
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend OTP",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVerifyOtp = async () => {
     if (!otp.trim()) {
       toast({
@@ -98,7 +133,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      const otpKey = localStorage.getItem("otp_key"); 
+      const otpKey = localStorage.getItem("otp_key");
       const { success, message } = await dispatch(
         verifyOtp(otp, otpKey, email)
       );
@@ -161,7 +196,7 @@ export default function ForgotPassword() {
         setEmail("");
         setOtp("");
         setNewPassword("");
-        setStep(1); 
+        setStep(1);
       } else {
         toast({
           title: "Error",
@@ -245,9 +280,11 @@ export default function ForgotPassword() {
               <Input
                 id="otp"
                 type="text"
-                placeholder="Enter OTP"
+                placeholder="######"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => setOtp(e.target.value.slice(0, 6))} // Ensure max 6 characters
+                maxLength={6} // Limit input length to 6 characters
+                textAlign="center" // Center text within the field
                 borderRadius="md"
                 _focus={{
                   borderColor: "blue.400",
@@ -259,18 +296,7 @@ export default function ForgotPassword() {
               Verify OTP
             </Button>
             <Text textAlign="center" mt={2}>
-              <Link
-                color="blue.500"
-                onClick={() =>
-                  toast({
-                    title: "OTP Resent",
-                    description: "A new OTP has been sent.",
-                    status: "info",
-                    duration: 3000,
-                    isClosable: true,
-                  })
-                }
-              >
+              <Link color="blue.500" onClick={handleResend}>
                 Resend OTP
               </Link>
             </Text>
